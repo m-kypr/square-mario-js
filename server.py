@@ -10,6 +10,7 @@ HTML_DIR = os.path.join(DIR, 'html')
 SOUND_DIR = os.path.join(DIR, 'sound')
 CSS_DIR = os.path.join(DIR, 'css')
 ANIM_DIR = os.path.join(DIR, 'animation')
+JPG_DIR = os.path.join(DIR, 'jpg')
 ROOMS = []
 app = Flask(__name__)
 
@@ -44,6 +45,13 @@ def get_css(path):
 def get_animation(path):
     r = send_from_directory(ANIM_DIR, path)
     r.mimetype = 'image/png'
+    return r
+
+
+@ app.route("/jpg/<path:path>")
+def get_jpg(path):
+    r = send_from_directory(JPG_DIR, path)
+    r.mimetype = 'image/jpeg'
     return r
 
 

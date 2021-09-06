@@ -15,6 +15,12 @@ var gravity;
 var jumpSpeed;
 var animations;
 var animationQueue;
+var score;
+var scoreDiv;
+var time;
+var timeDiv;
+var timerInterval;
+var win;
 const spd = 2;
 const jumpHeight = 20;
 const jump = 8;
@@ -25,6 +31,7 @@ class Sounds {
   constructor() {
     this.white = new Audio("/sound/white.mp3");
     this.landing = new Audio("/sound/landing.mp3");
+    this.coin = new Audio("/sound/coin.mp3");
   }
 }
 
@@ -218,11 +225,17 @@ function movePlayer() {
   for (let i = 0; i < coins.length; i++) {
     const c = coins[i];
     if (collision(c.rect, player)) {
+      sounds.coin.play();
+      score += c.v;
+      scoreDiv.innerHTML = `Score: ${score}`;
       collected.push(i);
+      break;
     }
   }
   collected.forEach((i) => {
-    coins.splice(i);
+    console.log(collected);
+    if (score >= 20) win = 1;
+    coins.splice(i, 1);
   });
 }
 
@@ -270,6 +283,16 @@ function playerJump() {
 }
 
 function loop() {
+  if (win == 1) {
+    clearInterval(timerInterval);
+    let img = new Image();
+    img.src = "/jpg/win2.jpg";
+    let w = cnvs.width / 3;
+    let h = w;
+    ctx.drawImage(img, cnvs.width / 2 - w, cnvs.height / 2 - h, w, h);
+    // clearInterval(gameInterval);
+    return;
+  }
   movePlayer();
   ctx.fillStyle = "#808080";
   ctx.fillRect(0, 0, cnvs.width, cnvs.height);
@@ -324,7 +347,7 @@ function loop() {
     }
   }
   disposeAnim.forEach((i) => {
-    animationQueue.splice(i);
+    animationQueue.splice(i, 1);
   });
 }
 
@@ -411,6 +434,27 @@ function buildHtml() {
       p.remove();
     }, 1000);
   });
+
+  scoreDiv = document.createElement("div");
+  scoreDiv.style.width = "100px";
+  scoreDiv.style.height = "30px";
+  scoreDiv.style.position = "absolute";
+  scoreDiv.style.left = cnvs.width - 100;
+  scoreDiv.style.top = "50px";
+  scoreDiv.style.font = "20px monospace";
+  scoreDiv.innerHTML = `Score: ${score}`;
+
+  timeDiv = document.createElement("div");
+  timeDiv.style.width = "100px";
+  timeDiv.style.height = "30px";
+  timeDiv.style.position = "absolute";
+  timeDiv.style.left = cnvs.width - 100;
+  timeDiv.style.top = "0px";
+  timeDiv.style.font = "20px monospace";
+  timeDiv.innerHTML = `Time: ${time / 100}`;
+
+  mainDiv.appendChild(timeDiv);
+  mainDiv.appendChild(scoreDiv);
   mainDiv.appendChild(roomIdDiv);
   mainDiv.appendChild(cnvs);
   mainDiv.style = "margin:0";
@@ -426,9 +470,16 @@ function buildHtml() {
 
 function main() {
   // backgroundMusic();
+  time = 0;
+  timerInterval = setInterval(() => {
+    time += 10;
+    timeDiv.innerHTML = `Time<br> ${time / 1000}s`;
+  }, 10);
   requestUUID((txt) => {
     roomId = JSON.parse(txt).uuid;
   });
+  win = 0;
+  score = 0;
   buildHtml();
   ctx = cnvs.getContext("2d");
   controller = new Controller();
@@ -468,7 +519,10 @@ function resize() {
     new Rect(cnvs.width - 400, cnvs.height - 300, 100, 50),
     new Rect(50, cnvs.height - 300, 100, 50),
   ];
-  coins = [new Coin(cnvs.width / 2, 50, 15)];
+  coins = [
+    new Coin(cnvs.width / 2, 50, 15),
+    new Coin(cnvs.width / 1.25, cnvs.height / 2, 5),
+  ];
 }
 
 window.onload = main;
