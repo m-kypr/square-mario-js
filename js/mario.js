@@ -13,7 +13,9 @@ var controller;
 var sounds;
 var gravity;
 var jumpSpeed;
-var spd = 2;
+var animations;
+var animationQueue;
+const spd = 2;
 const jumpHeight = 20;
 const jump = 8;
 const tickRate = 1;
@@ -21,6 +23,7 @@ const maxGrav = 3;
 
 class Sounds {
   constructor() {
+    this.white = new Audio("/sound/white.mp3");
     this.landing = new Audio("/sound/landing.mp3");
   }
 }
@@ -107,6 +110,27 @@ class Rect {
   }
 }
 
+class Animations {
+  constructor() {
+    this.landingAnimation = {
+      frames: [],
+      frameCount: 59,
+      name: "landing",
+    };
+  }
+  construct() {
+    let allAnims = [this.landingAnimation];
+    for (let i = 0; i < allAnims.length; i++) {
+      const anim = allAnims[i];
+      for (let j = 0; j < anim.frameCount; j++) {
+        let img = new Image();
+        img.src = `/animation/${anim.name}2/${j}.png`;
+        anim.frames.push(img);
+      }
+    }
+  }
+}
+
 class Coin {
   constructor(x, y, v) {
     this.x = x;
@@ -164,6 +188,13 @@ function movePlayer() {
             break;
           }
         }
+        for (let i = 0; i < coins.length; i++) {
+          const c = coins[i];
+          if (collision(c.rect, r)) {
+            f = true;
+            break;
+          }
+        }
         if (!f) walls.push(r);
       }
     }
@@ -206,6 +237,14 @@ function playerFall() {
     gravity += 1;
   } else {
     if (gravity > 0) {
+      animationQueue.push({
+        a: animations.landingAnimation,
+        x: player.x - player.w / 2,
+        y: player.y + player.h / 2,
+        w: player.w * 2,
+        h: player.h * 1,
+        f: animations.landingAnimation.frameCount - 1,
+      });
       sounds.landing.play();
     }
     gravity = 0;
@@ -255,15 +294,37 @@ function loop() {
   coins.forEach((c) => {
     ctx.beginPath();
     ctx.strokeStyle = "#000000";
-    ctx.fillStyle = "#FFBF00";
+    ctx.fillStyle = "#B8860B";
     ctx.arc(c.x, c.y, c.rect.w / 2, 0, Math.PI * 2, true);
+    ctx.stroke();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.rect.w / 2.2, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#FFBF00";
+    // ctx.fillStyle = "#000000";s
     ctx.fill();
     ctx.stroke();
-    ctx.font = 4 * c.v + "px monospace";
+    // ctx.beginPath();
+    // ctx.arc(c.x, c.y, c.rect.w / 2.2, 0, Math.PI * 2, true);
+    // ctx.stroke();
+    ctx.font = 3 * c.v + "px monospace";
     ctx.fillStyle = "#000000";
     ctx.beginPath();
-    ctx.fillText(c.v, c.x - c.rect.w / 3, c.y + c.rect.h, c.rect.w);
+    ctx.fillText(c.v, c.x - c.rect.w / 3, c.y + c.rect.h / 5, c.rect.w);
     // ctx.fillText();
+  });
+  let disposeAnim = [];
+  for (let i = 0; i < animationQueue.length; i++) {
+    const anim = animationQueue[i];
+    if (anim.f > 0) {
+      anim.f--;
+      ctx.drawImage(anim.a.frames[anim.f], anim.x, anim.y, anim.w, anim.h);
+    } else {
+      disposeAnim.push(i);
+    }
+  }
+  disposeAnim.forEach((i) => {
+    animationQueue.splice(i);
   });
 }
 
@@ -278,10 +339,36 @@ function requestUUID(callback) {
   oReq.send();
 }
 
-function main() {
-  requestUUID((txt) => {
-    roomId = JSON.parse(txt).uuid;
+function backgroundMusic() {
+  let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let xhr = new XMLHttpRequest();
+  xhr.open("GET", "http://192.168.178.126:4555/sound/white.mp3");
+  xhr.responseType = "arraybuffer";
+  xhr.addEventListener("load", () => {
+    let playsound = (audioBuffer) => {
+      let source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioCtx.destination);
+      source.loop = false;
+      source.start();
+      setTimeout(function () {
+        // let t = document.createElement("p");
+        // t.appendChild(
+        //   document.createTextNode(
+        //     new Date().toLocaleString() + ": Sound played"
+        //   )
+        // );
+        // document.querySelector(".output").appendChild(t);
+        playsound(audioBuffer);
+      }, 1000 + Math.random() * 2500);
+    };
+
+    audioCtx.decodeAudioData(xhr.response).then(playsound);
   });
+  xhr.send();
+}
+
+function buildHtml() {
   mainDiv = document.createElement("div");
   cnvs = document.createElement("canvas");
   cnvs.setAttribute("tabindex", "0");
@@ -330,17 +417,41 @@ function main() {
   document.body.appendChild(mainDiv);
   document.body.style = "margin:0";
 
-  ctx = cnvs.getContext("2d");
-  controller = new Controller();
-  sounds = new Sounds();
-  // spd = (cnvs.width / 2048) * tickRate;
-  gravity = 0;
-  jumpSpeed = 0;
   cnvs.addEventListener("keydown", (ev) => controller.keyPressed(ev));
   cnvs.addEventListener("keyup", (ev) => controller.keyReleased(ev));
   cnvs.addEventListener("mousedown", (ev) => controller.mousePressed(ev));
   cnvs.addEventListener("mouseup", (ev) => controller.mouseReleased(ev));
   cnvs.addEventListener("mousemove", (ev) => controller.mouseMove(ev));
+}
+
+function main() {
+  // backgroundMusic();
+  requestUUID((txt) => {
+    roomId = JSON.parse(txt).uuid;
+  });
+  buildHtml();
+  ctx = cnvs.getContext("2d");
+  controller = new Controller();
+  sounds = new Sounds();
+  animations = new Animations();
+  animations.construct();
+  animationQueue = [];
+  // spd = (cnvs.width / 2048) * tickRate;
+  gravity = 0;
+  jumpSpeed = 0;
+  // var audio = document.createElement("audio");
+  // audio.loop = true;
+  // audio.autoplay = true;
+  // audio.load();
+  // audio.addEventListener(
+  //   "load",
+  //   function () {
+  //     audio.play();
+  //   },
+  //   true
+  // );
+  // audio.src = "/sound/white.mp3";
+  // audio.play();
 
   gameInterval = setInterval(loop, tickRate);
 }

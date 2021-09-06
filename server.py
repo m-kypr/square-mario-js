@@ -9,6 +9,7 @@ ICO_DIR = os.path.join(DIR, 'ico')
 HTML_DIR = os.path.join(DIR, 'html')
 SOUND_DIR = os.path.join(DIR, 'sound')
 CSS_DIR = os.path.join(DIR, 'css')
+ANIM_DIR = os.path.join(DIR, 'animation')
 ROOMS = []
 app = Flask(__name__)
 
@@ -39,6 +40,13 @@ def get_css(path):
     return r
 
 
+@ app.route("/animation/<path:path>")
+def get_animation(path):
+    r = send_from_directory(ANIM_DIR, path)
+    r.mimetype = 'image/png'
+    return r
+
+
 @ app.route("/<path:path>")
 def get_ico(path):
     if len(path.split('.ico')) > 1:
@@ -66,8 +74,8 @@ def admin():
 
 @app.route("/game")
 def game():
+    # <link rel="stylesheet" href="/css/mario.css">
     return """
-    <link rel="stylesheet" href="/css/mario.css">
     <script src=\"/js/mario.js\"></script>"""
 
 
@@ -80,6 +88,15 @@ def settings():
 
 @app.route('/room')
 def room():
+    new_uuid = uuid()
+    while new_uuid in ROOMS:
+        new_uuid = uuid()
+    ROOMS.append(new_uuid)
+    return jsonify({'uuid': new_uuid})
+
+
+@app.route('/connect/<string:rid>')
+def connect(rid):
     new_uuid = uuid()
     while new_uuid in ROOMS:
         new_uuid = uuid()
