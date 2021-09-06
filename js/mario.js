@@ -77,15 +77,6 @@ class Controller {
     if (ev.button === 0) {
       this.leftMouse = 1;
     }
-    // if (ev.key === "ArrowDown" || ev.key === "s") {
-    //   this.down = 1;
-    // }
-    // if (ev.key === "ArrowLeft" || ev.key === "a") {
-    //   this.left = 1;
-    // }
-    // if (ev.key === "ArrowRight" || ev.key === "d") {
-    //   this.right = 1;
-    // }
   }
   mouseReleased(ev) {
     if (ev.button === 0) {
@@ -290,7 +281,6 @@ function loop() {
     let w = cnvs.width / 3;
     let h = w;
     ctx.drawImage(img, cnvs.width / 2 - w, cnvs.height / 2 - h, w, h);
-    // clearInterval(gameInterval);
     return;
   }
   movePlayer();
@@ -324,17 +314,12 @@ function loop() {
     ctx.beginPath();
     ctx.arc(c.x, c.y, c.rect.w / 2.2, 0, Math.PI * 2, true);
     ctx.fillStyle = "#FFBF00";
-    // ctx.fillStyle = "#000000";s
     ctx.fill();
     ctx.stroke();
-    // ctx.beginPath();
-    // ctx.arc(c.x, c.y, c.rect.w / 2.2, 0, Math.PI * 2, true);
-    // ctx.stroke();
     ctx.font = 3 * c.v + "px monospace";
     ctx.fillStyle = "#000000";
     ctx.beginPath();
     ctx.fillText(c.v, c.x - c.rect.w / 3, c.y + c.rect.h / 5, c.rect.w);
-    // ctx.fillText();
   });
   let disposeAnim = [];
   for (let i = 0; i < animationQueue.length; i++) {
@@ -375,13 +360,6 @@ function backgroundMusic() {
       source.loop = false;
       source.start();
       setTimeout(function () {
-        // let t = document.createElement("p");
-        // t.appendChild(
-        //   document.createTextNode(
-        //     new Date().toLocaleString() + ": Sound played"
-        //   )
-        // );
-        // document.querySelector(".output").appendChild(t);
         playsound(audioBuffer);
       }, 1000 + Math.random() * 2500);
     };
@@ -469,7 +447,7 @@ function buildHtml() {
 }
 
 function main() {
-  // backgroundMusic();
+  backgroundMusic();
   time = 0;
   timerInterval = setInterval(() => {
     time += 10;
@@ -487,23 +465,8 @@ function main() {
   animations = new Animations();
   animations.construct();
   animationQueue = [];
-  // spd = (cnvs.width / 2048) * tickRate;
   gravity = 0;
   jumpSpeed = 0;
-  // var audio = document.createElement("audio");
-  // audio.loop = true;
-  // audio.autoplay = true;
-  // audio.load();
-  // audio.addEventListener(
-  //   "load",
-  //   function () {
-  //     audio.play();
-  //   },
-  //   true
-  // );
-  // audio.src = "/sound/white.mp3";
-  // audio.play();
-
   gameInterval = setInterval(loop, tickRate);
 }
 
